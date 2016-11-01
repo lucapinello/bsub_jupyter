@@ -60,12 +60,12 @@ print'\n\n[Luca Pinello 2016, send bugs, suggestions or *green coffee* to lucapi
 print 'Version %s\n' % __version__
  
 parser = argparse.ArgumentParser(description='bsub_jupyter\n\n- Connect to a LSF main node directly or trough a ssh jump node, launch a jupyter notebook via bsub and open automatically a tunnel.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('username_at_server', type=str,  help='username@server, the server is the main LSF node used to submit jobs with bsub') 
+parser.add_argument('lsf_server', type=str,  help='username@server, the server is the main LSF node used to submit jobs with bsub') 
 parser.add_argument('connection_name', type=str,  help='Name of the connection')
                                   
     
 #OPTIONALS    
-parser.add_argument('--bastion_server',  help='SSH jump server', default=None)
+parser.add_argument('--bastion_server',  help='SSH jump server, format username@server', default=None)
 parser.add_argument('--memory', type=int,  help='Memory to request', default=64000)
 parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=8)
 parser.add_argument('--queue', type=str,  help='Queue to submit job',default='big-multi')
@@ -74,19 +74,16 @@ parser.add_argument('--force_new_connection',  help='Ignore any existing connect
     
 args = parser.parse_args()
 
-username,ssh_server=args.username_at_server.split('@')
+username,ssh_server=args.lsf_server.split('@')
 
 if not hostname_resolves(ssh_server):
     print 'Cannot resolve %s. Check server name and try again.' % ssh_server
     sys.exit(1)
 
-
+ssh_server=args.lsf_server
 bastion_server=args.bastion_server
-ssh_server=username+'@'+ssh_server
-
 
 if bastion_server:
-    bastion_server=username+'@'+bastion_server
     base_ssh_cmd="ssh -o ProxyCommand='ssh {0}  nc %h %p'".format(bastion_server)
 else:
     base_ssh_cmd="ssh "
