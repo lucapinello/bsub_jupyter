@@ -65,11 +65,12 @@ parser.add_argument('connection_name', type=str,  help='Name of the connection')
                                   
     
 #OPTIONALS    
-parser.add_argument('--bastion_server',  help='SSH jump server', default='ssh.research.partners.org')
+parser.add_argument('--bastion_server',  help='SSH jump server', default=None)
 parser.add_argument('--memory', type=int,  help='Memory to request', default=64000)
-parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=16)
+parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=8)
 parser.add_argument('--queue', type=str,  help='Queue to submit job',default='big-multi')
-parser.add_argument('--use_bastion_server',help='Use intermediate bastion ssh server',action='store_true')
+parser.add_argument('--force_new_connection',  help='Ignore any existing connection file and start a new connection', action='store_true')
+
     
 args = parser.parse_args()
 
@@ -82,11 +83,10 @@ if not hostname_resolves(ssh_server):
 
 bastion_server=args.bastion_server
 ssh_server=username+'@'+ssh_server
-bastion_server=username+'@'+bastion_server
 
-use_bastion_server=args.use_bastion_server
 
-if use_bastion_server:
+if bastion_server:
+    bastion_server=username+'@'+bastion_server
     base_ssh_cmd="ssh -o ProxyCommand='ssh {0}  nc %h %p'".format(bastion_server)
 else:
     base_ssh_cmd="ssh "
@@ -104,7 +104,7 @@ print 'Checking if a connection alrady exists...'
 #check if the connection  exists already
 connection_status=sb.check_output('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename),shell=True).strip()
 
-if connection_status=='True':
+if connection_status=='True' and not args.force_new_connection:
     
     print 'A running job already exists!'
 
@@ -113,7 +113,8 @@ else:
     #launch a job
     sb.call('%s -t %s "bsub  -q %s -n %d -M %d -R ' % (base_ssh_cmd,ssh_server,queue,n_cores,memory) +"'rusage[mem=%d]'" % memory + ' jupyter notebook --port=%d --no-browser 2>&1 >%s" 2> /dev/null' %(random_remote_port, connection_filename),shell=True)
     sb.call('%s -t %s "echo %s,%s >> %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,random_local_port, random_remote_port,connection_filename),shell=True)
-
+    connection_status=True
+    
 job_id=sb.check_output('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).split('<')[1].split('>')[0]
 random_local_port, random_remote_port=map(int,sb.check_output('%s %s "tail -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).strip().split(','))
 
@@ -155,7 +156,7 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
 
         sb.call('sleep 2 && explorer "http://localhost:%d" & 2> /dev/null' % random_local_port,shell=True)
 
-        if use_bastion_server:
+        if bastion_server:
             cmd_tunnel=''' ssh -N -L {0}:localhost:{1} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ProxyCommand='ssh  -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ProxyCommand="ssh {2} nc %h %p" {3} nc %h %p' {4}@{5}.research.partners.org 2> /dev/null'''\
                  .format(random_local_port,random_remote_port,ssh_server,bastion_server,username,server)
         else:
@@ -165,7 +166,7 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
 
         try:
 
-            print 'Tunnel created!'
+            print 'Tunnel created! You can see your jupyter notebook server at: http://localhost:%d' % random_local_port
             print 'Press Ctrl-c to interrupt the connection'
             sb.call(cmd_tunnel,shell=True)
         except:
