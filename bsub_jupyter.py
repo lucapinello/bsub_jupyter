@@ -62,10 +62,10 @@ print 'Version %s\n' % __version__
 parser = argparse.ArgumentParser(description='bsub_jupyter\n\n- Connect to a LSF main node directly or trough a ssh jump node, launch a jupyter notebook via bsub and open automatically a tunnel.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('lsf_server', type=str,  help='username@server, the server is the main LSF node used to submit jobs with bsub') 
 parser.add_argument('connection_name', type=str,  help='Name of the connection')
-parser.add_argument('remote_path', type=str,  help='remote path to use',default='~')
                                
     
 #OPTIONALS    
+parser.add_argument('--remote_path', type=str,  help='remote path to use',default='~')
 parser.add_argument('--bastion_server',  help='SSH jump server, format username@server', default=None)
 parser.add_argument('--memory', type=int,  help='Memory to request', default=64000)
 parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=8)
