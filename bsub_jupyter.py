@@ -62,7 +62,8 @@ print 'Version %s\n' % __version__
 parser = argparse.ArgumentParser(description='bsub_jupyter\n\n- Connect to a LSF main node directly or trough a ssh jump node, launch a jupyter notebook via bsub and open automatically a tunnel.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('lsf_server', type=str,  help='username@server, the server is the main LSF node used to submit jobs with bsub') 
 parser.add_argument('connection_name', type=str,  help='Name of the connection')
-                                  
+parser.add_argument('remote_path', type=str,  help='remote path to use',default='~')
+                               
     
 #OPTIONALS    
 parser.add_argument('--bastion_server',  help='SSH jump server, format username@server', default=None)
@@ -108,7 +109,7 @@ if connection_status=='True' and not args.force_new_connection:
 else:
     print 'No running jobs were found, launching a new one! '
     #launch a job
-    sb.call('%s -t %s "bsub  -q %s -n %d -M %d -R ' % (base_ssh_cmd,ssh_server,queue,n_cores,memory) +"'rusage[mem=%d]'" % memory + ' jupyter notebook --port=%d --no-browser 2>&1 >%s" 2> /dev/null' %(random_remote_port, connection_filename),shell=True)
+    sb.call('%s -t %s "bsub  -q %s -n %d -M %d -R ' % (base_ssh_cmd,ssh_server,queue,n_cores,memory) +"'rusage[mem=%d]'" % memory + 'cd %s && jupyter notebook --port=%d --no-browser 2>&1 >%s" 2> /dev/null' %(remote_path,random_remote_port, connection_filename),shell=True)
     sb.call('%s -t %s "echo %s,%s >> %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,random_local_port, random_remote_port,connection_filename),shell=True)
     connection_status=True
     
