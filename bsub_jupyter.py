@@ -111,7 +111,7 @@ if connection_status=='True' and not args.force_new_connection:
 else:
     print 'No running jobs were found, launching a new one! '
     #launch a job
-    sb.call('%s -t %s "bsub  -q %s -n %d -M %d -R ' % (base_ssh_cmd,ssh_server,queue,n_cores,memory) +"'rusage[mem=%d]'" % memory + 'cd %s && jupyter notebook --port=%d --no-browser 2>&1 >%s" 2> /dev/null' %(remote_path,random_remote_port, connection_filename),shell=True)
+    sb.call('%s -t %s "bsub  -q %s -n %d -M %d -cwd %s -R ' % (base_ssh_cmd,ssh_server,queue,n_cores,memory,remote_path) +"'rusage[mem=%d]'" % memory + ' jupyter notebook --port=%d --no-browser 2>&1 >%s" 2> /dev/null' %(random_remote_port, connection_filename),shell=True)
     sb.call('%s -t %s "echo %s,%s >> %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,random_local_port, random_remote_port,connection_filename),shell=True)
     connection_status=True
     
