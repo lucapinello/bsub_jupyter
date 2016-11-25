@@ -98,6 +98,8 @@ n_cores=args.n_cores
 random_local_port=randint(9000,10000)
 random_remote_port=randint(9000,10000)
 
+remote_path=args.remote_path
+
 print 'Checking if a connection alrady exists...'
 #check if the connection  exists already
 connection_status=sb.check_output('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename),shell=True).strip()
