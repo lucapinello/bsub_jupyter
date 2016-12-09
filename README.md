@@ -10,7 +10,7 @@ python bsub_jupyter username@server connection_name
 For example:
 
 ```
-python bsub_jupyter.py  lp698@eris1n2.research.partners.org my_connection
+python bsub_jupyter.py  lp698@eris1n2.research.partners.org my_connection2 --remote_path /data/pinello
 ```
 
 You will see:
