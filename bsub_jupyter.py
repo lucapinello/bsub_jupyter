@@ -3,7 +3,7 @@
 Jupyter_Bsub - Luca Pinello 2016
 Connect to a LSF main node directly or trough a ssh jump node, launch a jupyter notebook via bsub and open automatically a tunnel.
 '''
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 import subprocess as sb
@@ -75,19 +75,32 @@ parser.add_argument('--force_new_connection',  help='Ignore any existing connect
     
 args = parser.parse_args()
 
-username,ssh_server=args.lsf_server.split('@')
+username,hostname_server=args.lsf_server.split('@')
 
-if not hostname_resolves(ssh_server):
-    print 'Cannot resolve %s. Check server name and try again.' % ssh_server
-    sys.exit(1)
 
 ssh_server=args.lsf_server
 bastion_server=args.bastion_server
 
+local_bastion_port=10001
+ssh_port=22
+
 if bastion_server:
-    base_ssh_cmd="ssh -o ProxyCommand='ssh {0}  nc %h %p'".format(bastion_server)
-else:
-    base_ssh_cmd="ssh "
+    #ssh  -L 9000:eris1n2.research.partners.org:22 lp698@ssh.research.partners.org
+    
+    #create tunnel via bastion server
+    cmd_bastion_tunnel='ssh -N -f -L {0}:{1}:{2} {3} '.format(local_bastion_port,hostname_server,ssh_port,bastion_server)
+    print cmd_bastion_tunnel
+    sb.call(cmd_bastion_tunnel,shell=True)
+    
+    ssh_server=" {0}@{1} -p {2} ".format(username,"localhost", local_bastion_port)
+
+base_ssh_cmd="ssh "
+
+
+if not hostname_resolves(hostname_server):
+    print 'Cannot resolve %s. Check server name and try again.' % hostname_server
+    sys.exit(1)
+    
 
 connection_name=args.connection_name
 connection_filename='jupyter_connection_%s' % connection_name
@@ -155,12 +168,7 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
     if query_yes_no('Should I open an ssh tunnel for you?'):
 
         sb.call('sleep 2 && explorer "http://localhost:%d" & 2> /dev/null' % random_local_port,shell=True)
-
-        if bastion_server:
-            cmd_tunnel=''' ssh -N -L {0}:localhost:{1} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ProxyCommand='ssh  -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ProxyCommand="ssh {2} nc %h %p" {3} nc %h %p' {4}@{5}.research.partners.org 2> /dev/null'''\
-                 .format(random_local_port,random_remote_port,ssh_server,bastion_server,username,server)
-        else:
-            cmd_tunnel="ssh -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand ssh {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server)
+        cmd_tunnel="ssh -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand ssh {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server)
             
         #print cmd_tunnel
 
