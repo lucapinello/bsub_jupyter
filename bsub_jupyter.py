@@ -15,7 +15,6 @@ from random import randint
 import argparse
 import socket
 
-
 def hostname_resolves(hostname):
     try:
         socket.gethostbyname(hostname)
@@ -167,14 +166,14 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
 
     if query_yes_no('Should I open an ssh tunnel for you?'):
 
-        sb.call('sleep 2 && explorer "http://localhost:%d" & 2> /dev/null' % random_local_port,shell=True)
+        sb.call('sleep 5 && python -m webbrowser -t "http://localhost:%d" & 2> /dev/null' % random_local_port,shell=True)
         cmd_tunnel="ssh -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand ssh {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server)
             
         #print cmd_tunnel
 
         try:
 
-            print 'Tunnel created! You can see your jupyter notebook server at: http://localhost:%d' % random_local_port
+            print 'Tunnel created! You can see your jupyter notebook server at:\n\n\t--> http://localhost:%d <--\n' % random_local_port
             print 'Press Ctrl-c to interrupt the connection'
             sb.call(cmd_tunnel,shell=True)
         except:
