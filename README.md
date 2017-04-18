@@ -2,9 +2,47 @@
 Connect to a LSF main node directly or trough a ssh jump node, launch a jupyter notebook via bsub and open automatically a tunnel. The name of the connection can be used to reestablish the connection later or to terminate it.
 
 
+
+Installation
+------------
+```
+git clone https://github.com/lucapinello/bsub_jupyter
+cd bsub_jupyter
+```
+
+Add public key to the machine
+-----------------------------
+To avoid entering the password many many times to establish the connection those steps are necessary, BEFORE running the script.
+
+Create a new ssh key if you don’t have one with the command
+
+```
+ssh-keygen
+```
+The key will be stored by default in: ~/.ssh/id_rsa.pub 
+
+Install the utility ssh-copy-id if not available. 
+
+On OSX this can be accomplished easily with the Homebrew packaging manager (https://brew.sh/). After installing homebrew type the command
+
+```
+brew install ssh-copy-id
+```
+
+While inside your network (or connected through the VPN) copy your public key to the main node machine with the command:
+
+```
+ssh-copy-id -i ~/.ssh/id_rsa.pub lp698@ssh.research.partners.org
+```
+
+If you are planning to use bsub_jupyter outside your VPN network copy also the public key to the bastion server:
+
+```
+ssh-copy-id -i ~/.ssh/id_rsa.pub lp698@eris1n2.research.partners.org
+```
+
 Usage
 -----
-
 python bsub_jupyter username@server connection_name
 
 For example:
