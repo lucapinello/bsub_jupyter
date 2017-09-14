@@ -1,10 +1,10 @@
 from __future__ import print_function
 #!/usr/bin/env python 
 '''
-Jupyter_Bsub - Luca Pinello 2016
+Jupyter_Bsub - Luca Pinello & Kendell Clement 2017
 Connect to a LSF main node directly or trough a ssh jump node, launch a jupyter notebook via bsub and open automatically a tunnel.
 '''
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 import subprocess as sb
@@ -202,7 +202,3 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
                 sys.exit(0)
 else:
     print('Tunnel already exists!')
-
-
-
-
