@@ -43,6 +43,9 @@ If you are planning to use bsub_jupyter outside your VPN network copy also the p
 ssh-copy-id -i ~/.ssh/id_rsa.pub lp698@eris1n2.research.partners.org
 ```
 
+Finally, if you have not yet created a password for Jupyter on the remote machine, you need to do manually or using this nice utility:
+https://github.com/paderijk/jupyter-password
+
 Usage
 -----
 python bsub_jupyter username@server connection_name
