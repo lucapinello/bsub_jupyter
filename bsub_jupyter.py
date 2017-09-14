@@ -73,6 +73,7 @@ parser.add_argument('--memory', type=int,  help='Memory to request', default=640
 parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=8)
 parser.add_argument('--queue', type=str,  help='Queue to submit job',default='big-multi')
 parser.add_argument('--force_new_connection',  help='Ignore any existing connection file and start a new connection', action='store_true')
+parser.add_argument('--ignoreHostChecking',  help='Ignore known host checking. If your client-side tunnel is not created and you get a message starting "The authenticity of host {xxx} can\'t be established." try enabling this flag.', action='store_true')
 parser.add_argument('--debug',  help='Print helpful debug messages', action='store_true')
 parser.add_argument('--env', type=str, help='load a different env for python')
     
@@ -185,9 +186,13 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
     if query_yes_no('Should I open an ssh tunnel for you?'):
 
         sb.call('sleep 5 && python -m webbrowser -t "http://localhost:%d" & 2> /dev/null' % random_local_port,shell=True)
-        cmd_tunnel="ssh -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand ssh {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server)
-            
-	if args.debug: print(cmd_tunnel)
+        
+        tunnel_ssh_command = "ssh "
+        if args.ignoreHostChecking: tunnel_ssh_command = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
+
+        cmd_tunnel = tunnel_ssh_command + " -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand ssh {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server)
+    
+        if args.debug: print(cmd_tunnel)
 
         try:
 
