@@ -40,7 +40,7 @@ def query_yes_no(question, default="yes"):
 
     while True:
         sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
+        choice = input().lower()
         if default is not None and choice == '':
             return valid[default]
         elif choice in valid:
@@ -70,7 +70,7 @@ parser.add_argument('connection_name', type=str,  help='Name of the connection')
 parser.add_argument('--remote_path', type=str,  help='remote path to use',default='~')
 parser.add_argument('--bastion_server',  help='SSH jump server, format username@server', default=None)
 parser.add_argument('--memory', type=int,  help='Memory to request', default=64000)
-parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=8)
+parser.add_argument('--n_cores', type=int,  help='# of cores to request', default=8) #8
 parser.add_argument('--queue', type=str,  help='Queue to submit job',default='big-multi')
 parser.add_argument('--force_new_connection',  help='Ignore any existing connection file and start a new connection', action='store_true')
 parser.add_argument('--ignoreHostChecking',  help='Ignore known host checking. If your client-side tunnel is not created and you get a message starting "The authenticity of host {xxx} can\'t be established." try enabling this flag.', action='store_true')
@@ -123,7 +123,11 @@ remote_path=args.remote_path
 
 print('Checking if a connection alrady exists...')
 #check if the connection  exists already
-connection_status=sb.check_output('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename),shell=True).strip()
+try:
+    connection_status=sb.check_output('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename),shell=True).decode('utf-8').strip()
+except TypeError: 
+    print('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename))
+    exit(1)
 
 if connection_status=='True' and not args.force_new_connection:
     
@@ -145,8 +149,11 @@ else:
 	sb.call(cmd_file_write,shell=True)
 	connection_status=True
     
-job_id=sb.check_output('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).split('<')[1].split('>')[0]
-random_local_port, random_remote_port=map(int,sb.check_output('%s %s "tail -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).strip().split(','))
+try: 
+    job_id=sb.check_output('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).decode('utf-8').split('<')[1].split('>')[0]
+except TypeError:
+    print('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename))
+random_local_port, random_remote_port=map(int,sb.check_output('%s %s "tail -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).decode('utf-8').strip().split(','))
 
 print('JOB ID:',job_id)
 
