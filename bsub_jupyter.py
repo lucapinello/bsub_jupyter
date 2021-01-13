@@ -85,29 +85,17 @@ username,hostname_server=args.lsf_server.split('@')
 ssh_server=args.lsf_server
 bastion_server=args.bastion_server
 
-local_bastion_port=10001
-ssh_port=22
-
 if bastion_server:
     if not hostname_resolves(bastion_server):
         print('Cannot resolve bastion server %s. Check server name and try again.' % bastion_server)
         sys.exit(1)
+    base_ssh_cmd="ssh -J {0}@{1} ".format(username,bastion_server)
+else:
 
-    #ssh  -L 9000:eris1n2.research.partners.org:22 lp698@ssh.research.partners.org
-
-    #create tunnel via bastion server
-    cmd_bastion_tunnel='ssh -N -f -L {0}:{1}:{2} {3} '.format(local_bastion_port,hostname_server,ssh_port,bastion_server)
-    if args.debug : print(cmd_bastion_tunnel)
-    sb.call(cmd_bastion_tunnel,shell=True)
-
-    ssh_server=" {0}@{1} -p {2} ".format(username,"localhost", local_bastion_port)
-
-base_ssh_cmd="ssh "
-
-
-if not hostname_resolves(hostname_server):
-    print('Cannot resolve %s. Check server name and try again.' % hostname_server)
-    sys.exit(1)
+    base_ssh_cmd="ssh "
+    if not hostname_resolves(hostname_server):
+        print('Cannot resolve %s. Make sure you are connected to the VPN or check server name and try again.' % hostname_server)
+        sys.exit(1)
 
 
 connection_name=args.connection_name
@@ -197,7 +185,7 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
         tunnel_ssh_command = "ssh "
         if args.ignoreHostChecking: tunnel_ssh_command = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
 
-        cmd_tunnel = tunnel_ssh_command + " -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand ssh {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server)
+        cmd_tunnel = tunnel_ssh_command + " -N  -L localhost:{0}:localhost:{1} -o 'ProxyCommand {5} {2} nc %h %p'  {3}@{4}.research.partners.org 2> /dev/null".format(random_local_port,random_remote_port,ssh_server,username,server,base_ssh_cmd)
 
         if args.debug: print(cmd_tunnel)
 
