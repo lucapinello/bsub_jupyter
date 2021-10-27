@@ -112,7 +112,7 @@ remote_path=args.remote_path
 print('Checking if a connection alrady exists...')
 #check if the connection  exists already
 try:
-    connection_status=sb.check_output('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename),shell=True).decode('utf-8').strip()
+    connection_status=sb.check_output('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename)).decode('utf-8').strip()
 except TypeError:
     print('%s -t %s "[ -f %s ] && echo True|| echo False" 2> /dev/null' %(base_ssh_cmd,ssh_server, connection_filename))
     exit(1)
@@ -131,24 +131,24 @@ else:
 
 	cmd_jupyter='%s -t %s "bsub  -q %s -n %d -M %d -cwd %s -R ' % (base_ssh_cmd,ssh_server,queue,n_cores,memory,remote_path) +"'rusage[mem=%d]'" % memory + " '"+env_cmd+" jupyter notebook --port=%d --no-browser '"%(random_remote_port)+' 2>&1 >%s "'%connection_filename+' 2>/dev/null'
 	if args.debug: print(cmd_jupyter)
-	sb.call( cmd_jupyter,shell=True)
+	sb.call( cmd_jupyter)
 	cmd_file_write = '%s -t %s "echo %s,%s >> %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,random_local_port, random_remote_port,connection_filename)
 	if args.debug: print(cmd_file_write)
-	sb.call(cmd_file_write,shell=True)
+	sb.call(cmd_file_write)
 	connection_status=True
 
 try:
-    job_id=sb.check_output('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).decode('utf-8').split('<')[1].split('>')[0]
+    job_id=sb.check_output('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename)).decode('utf-8').split('<')[1].split('>')[0]
 except TypeError:
     print('%s %s " head -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename))
-random_local_port, random_remote_port=map(int,sb.check_output('%s %s "tail -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename),shell=True).decode('utf-8').strip().split(','))
+random_local_port, random_remote_port=map(int,sb.check_output('%s %s "tail -n 1 ~/%s" 2> /dev/null' % (base_ssh_cmd,ssh_server,connection_filename)).decode('utf-8').strip().split(','))
 
 print('JOB ID:',job_id)
 
 if  connection_status=='True':
     if query_yes_no('Should I kill it?'):
         bkill_command='%s -t %s "bkill %s; rm %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,job_id,connection_filename)
-        sb.call(bkill_command,shell=True)
+        sb.call(bkill_command)
         sys.exit(0)
 
 # use bjobs to get the node the server is running on
@@ -158,7 +158,7 @@ while server is None:
 
     bjob_command='%s -t %s "bjobs -l %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,job_id)
     if args.debug: print("bjob_command: " + bjob_command)
-    p = sb.Popen(bjob_command, stdout=sb.PIPE, stderr=sb.PIPE,shell=True)
+    p = sb.Popen(bjob_command, stdout=sb.PIPE, stderr=sb.PIPE)
     out, err = p.communicate()
     #print (out, type(out))
     print('.',end = "")
@@ -175,12 +175,12 @@ print('\nServer launched on node: '+server)
 
 print('Local port: %d  remote port: %d' %(random_local_port, random_remote_port))
 
-if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local_port,shell=True).decode('utf-8').strip()=='no tunnel open':
+if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local_port).decode('utf-8').strip()=='no tunnel open':
 
 
     if query_yes_no('Should I open an ssh tunnel for you?'):
 
-        sb.call('sleep 5 && python -m webbrowser -t "http://localhost:%d" & 2> /dev/null' % random_local_port,shell=True)
+        sb.call('sleep 5 && python -m webbrowser -t "http://localhost:%d" & 2> /dev/null' % random_local_port)
 
         tunnel_ssh_command = "ssh "
         if args.ignoreHostChecking: tunnel_ssh_command = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "
@@ -193,12 +193,12 @@ if sb.check_output("nc -z localhost %d || echo 'no tunnel open';" % random_local
 
             print('Tunnel created! You can see your jupyter notebook server at:\n\n\t--> http://localhost:%d <--\n' % random_local_port)
             print('Press Ctrl-c to interrupt the connection')
-            sb.call(cmd_tunnel,shell=True)
+            sb.call(cmd_tunnel)
         except:
             print('Tunnel closed!')
             if query_yes_no('Should I kill also the job?'):
                 bkill_command='%s -t %s "bkill %s; rm %s" 2> /dev/null' % (base_ssh_cmd,ssh_server,job_id,connection_filename)
-                sb.call(bkill_command,shell=True)
+                sb.call(bkill_command)
                 sys.exit(0)
 else:
     print('Tunnel already exists!')
